@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from criteria.clip_loss import CLIPLoss
 from criteria.id_loss import IDLoss
+from metrics.lpips import LPIPS
 from mapper.training.train_utils import STYLESPACE_DIMENSIONS
 from models.stylegan2.model import Generator
 import clip
@@ -61,6 +62,7 @@ def main(args):
 
     clip_loss = CLIPLoss(args)
     id_loss = IDLoss(args)
+    lpips = LPIPS().cuda()
 
     if args.work_in_stylespace:
         optimizer = optim.Adam(latent, lr=args.lr)
@@ -88,7 +90,9 @@ def main(args):
                 l2_loss = sum([((latent_code_init[c] - latent[c]) ** 2).sum() for c in range(len(latent_code_init))])
             else:
                 l2_loss = ((latent_code_init - latent) ** 2).sum()
-            loss = c_loss + args.l2_lambda * l2_loss + args.id_lambda * i_loss
+            
+            lpips_loss = lpips(img_gen,img_orig)
+            loss = c_loss + args.l2_lambda * l2_loss + args.id_lambda * i_loss + args.lpips_lambda * lpips_loss
         else:
             loss = c_loss
 
