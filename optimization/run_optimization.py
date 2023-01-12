@@ -12,6 +12,8 @@ from criteria.id_loss import IDLoss
 from metrics.lpips import LPIPS
 from mapper.training.train_utils import STYLESPACE_DIMENSIONS
 from models.stylegan2.model import Generator
+from torchvision.transforms import ToTensor
+from PIL import Image
 import clip
 from utils import ensure_checkpoint_exists
 
@@ -34,7 +36,7 @@ def main(args):
     g_ema.load_state_dict(torch.load(args.ckpt)["g_ema"], strict=False)
     g_ema.eval()
     g_ema = g_ema.cuda()
-    mean_latent = g_ema.mean_latent(4096)
+    mean_latent = g_ema.mean_latent(10000)
 
     if args.latent_path:
         latent_code_init = torch.load(args.latent_path).cuda()
@@ -68,6 +70,10 @@ def main(args):
         optimizer = optim.Adam(latent, lr=args.lr)
     else:
         optimizer = optim.Adam([latent], lr=args.lr)
+    
+    if args.character_reference:
+        img_char=Image.open(args.character_reference)
+        img_char=ToTensor()(img_char).unsqueeze(0)
 
     pbar = tqdm(range(args.step))
 
@@ -92,7 +98,8 @@ def main(args):
                 l2_loss = ((latent_code_init - latent) ** 2).sum()
             
             lpips_loss = lpips(img_gen,img_orig)
-            loss = c_loss + args.l2_lambda * l2_loss + args.id_lambda * i_loss + args.lpips_lambda * lpips_loss
+#             loss = c_loss + args.l2_lambda * l2_loss + args.id_lambda * i_loss + args.lpips_lambda * lpips_loss
+            loss = args.l2_lambda * l2_loss + args.id_lambda * i_loss + args.lpips_lambda * lpips_loss
         else:
             loss = c_loss
 
@@ -102,7 +109,7 @@ def main(args):
 
         pbar.set_description(
             (
-                f"loss: {loss.item():.4f};"
+                f"loss: {loss.item():.4f};id_loss: {i_loss.item():.4f};lpips_loss: {lpips_loss.item():.4f}"
             )
         )
         if args.save_intermediate_image_every > 0 and i % args.save_intermediate_image_every == 0:
