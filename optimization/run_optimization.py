@@ -48,8 +48,12 @@ def main(args):
     else:
         latent_code_init = mean_latent.detach().clone().repeat(1, 18, 1)
 
+    if args.character_latent:
+        latent_char = torch.load(args.character_latent).cuda()
+    
     with torch.no_grad():
         img_orig, _ = g_ema([latent_code_init], input_is_latent=True, randomize_noise=False)
+        img_latent_char, _ = g_ema([latent_char], input_is_latent=True, randomize_noise=False)
 
     if args.work_in_stylespace:
         with torch.no_grad():
@@ -73,7 +77,7 @@ def main(args):
     
     if args.character_reference:
         img_char=Image.open(args.character_reference)
-        img_char=ToTensor()(img_char).unsqueeze(0)
+        img_char=ToTensor()(img_char).unsqueeze(0).cuda()
 
     pbar = tqdm(range(args.step))
 
@@ -87,7 +91,7 @@ def main(args):
         c_loss = clip_loss(img_gen, text_inputs)
 
         if args.id_lambda > 0:
-            i_loss = id_loss(img_gen, img_orig)[0]
+            i_loss = id_loss(img_gen, img_char)[0]
         else:
             i_loss = 0
 
