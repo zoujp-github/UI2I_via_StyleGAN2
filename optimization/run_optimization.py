@@ -129,7 +129,7 @@ def main(args):
     else:
         final_result = img_gen
         
-    torch.save(img_gen,"reslut_img.pt")
+    torch.save(img_gen,"result_img.pt")
     torch.save(latent,"result.pt")
     
     return final_result
