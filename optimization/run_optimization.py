@@ -128,7 +128,10 @@ def main(args):
         final_result = torch.cat([img_orig, img_gen])
     else:
         final_result = img_gen
-
+        
+    torch.save(img_gen,"reslut_img.pt")
+    torch.save(latent,"result.pt")
+    
     return final_result
 
 
