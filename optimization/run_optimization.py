@@ -63,7 +63,8 @@ def main(args):
             if c in STYLESPACE_INDICES_WITHOUT_TORGB:
                 s.requires_grad = True
     else:
-        latent = latent_code_init.detach().clone()
+        #latent = latent_code_init.detach().clone()
+        latent = latent_char.detach().clone()
         latent.requires_grad = True
 
     clip_loss = CLIPLoss(args)
@@ -92,6 +93,7 @@ def main(args):
 
         if args.id_lambda > 0:
             i_loss = id_loss(img_gen, img_char)[0]
+            # i_loss = id_loss(img_gen, img_latent_char)[0]
         else:
             i_loss = 0
 
@@ -103,7 +105,7 @@ def main(args):
             
             lpips_loss = lpips(img_gen,img_orig)
 #             loss = c_loss + args.l2_lambda * l2_loss + args.id_lambda * i_loss + args.lpips_lambda * lpips_loss
-            loss = args.l2_lambda * l2_loss + args.id_lambda * i_loss + args.lpips_lambda * lpips_loss
+            loss = args.clip_lambda * c_loss + args.l2_lambda * l2_loss + args.id_lambda * i_loss + args.lpips_lambda * lpips_loss
         else:
             loss = c_loss
 
